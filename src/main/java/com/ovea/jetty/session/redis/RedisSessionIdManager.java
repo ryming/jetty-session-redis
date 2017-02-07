@@ -36,8 +36,8 @@ public final class RedisSessionIdManager extends SessionIdManagerSkeleton {
     final static Logger LOG = Log.getLogger("com.ovea.jetty.session");
 
     private static final Long ZERO = 0L;
-    private static final String REDIS_SESSIONS_KEY = "jetty-sessions";
-    static final String REDIS_SESSION_KEY = "jetty-session-";
+    static final String REDIS_SESSIONS_KEY = "jetty-sessions-key-";
+    static final String REDIS_SESSION_KEY = "jetty-session-value-";
 
     private final JedisExecutor jedisExecutor;
 
@@ -72,7 +72,7 @@ public final class RedisSessionIdManager extends SessionIdManagerSkeleton {
         jedisExecutor.execute(new JedisCallback<Object>() {
             @Override
             public Object execute(Jedis jedis) {
-                return jedis.srem(REDIS_SESSIONS_KEY, clusterId);
+                return jedis.del(REDIS_SESSIONS_KEY + clusterId);
             }
         });
     }
@@ -82,7 +82,7 @@ public final class RedisSessionIdManager extends SessionIdManagerSkeleton {
         jedisExecutor.execute(new JedisCallback<Object>() {
             @Override
             public Object execute(Jedis jedis) {
-                return jedis.sadd(REDIS_SESSIONS_KEY, clusterId);
+                return jedis.setex(REDIS_SESSIONS_KEY + clusterId, 3600, "1"); // RedisSessionManager.java method storeSession(final RedisSession session) will set correct expire time
             }
         });
     }
@@ -92,7 +92,7 @@ public final class RedisSessionIdManager extends SessionIdManagerSkeleton {
         return jedisExecutor.execute(new JedisCallback<Boolean>() {
             @Override
             public Boolean execute(Jedis jedis) {
-                return jedis.sismember(REDIS_SESSIONS_KEY, clusterId);
+                return jedis.exists(REDIS_SESSIONS_KEY + clusterId);
             }
         });
     }
@@ -114,7 +114,7 @@ public final class RedisSessionIdManager extends SessionIdManagerSkeleton {
             }
         });
         for (int i = 0; i < status.size(); i++)
-            if (ZERO.equals(status.get(i)))
+            if (status.get(i) != null && status.get(i).equals(false))
                 expired.add(clusterIds.get(i));
         if (LOG.isDebugEnabled() && !expired.isEmpty())
             LOG.debug("[RedisSessionIdManager] Scavenger found {} sessions to expire: {}", expired.size(), expired);

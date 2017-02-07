@@ -142,15 +142,14 @@ public abstract class SessionIdManagerSkeleton extends AbstractSessionIdManager 
         String clusterId = getClusterId(session.getId());
         if (sessions.containsKey(clusterId)) {
             sessions.remove(clusterId);
-            deleteClusterId(clusterId);
         }
+        deleteClusterId(clusterId);
     }
 
     @Override
     public final void invalidateAll(final String clusterId) {
         if (sessions.containsKey(clusterId)) {
             sessions.remove(clusterId);
-            deleteClusterId(clusterId);
             forEachSessionManager(new SessionManagerCallback() {
                 @Override
                 public void execute(SessionManagerSkeleton sessionManager) {
@@ -158,6 +157,7 @@ public abstract class SessionIdManagerSkeleton extends AbstractSessionIdManager 
                 }
             });
         }
+        deleteClusterId(clusterId);
     }
 
     protected abstract void deleteClusterId(String clusterId);

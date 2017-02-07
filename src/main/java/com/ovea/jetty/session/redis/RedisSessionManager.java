@@ -184,9 +184,11 @@ public final class RedisSessionManager extends SessionManagerSkeleton<RedisSessi
                     return jedis.multi(new TransactionBlock() {
                         @Override
                         public void execute() throws JedisException {
-                            final String key = RedisSessionIdManager.REDIS_SESSION_KEY + session.getClusterId();
+                            String clusterId = session.getClusterId();
+                            final String key = RedisSessionIdManager.REDIS_SESSION_KEY + clusterId;
                             super.hmset(key, toStore);
                             super.expireAt(key, session.expiryTime);
+                            super.expireAt(RedisSessionIdManager.REDIS_SESSIONS_KEY + clusterId, session.expiryTime);
                         }
                     });
                 }
